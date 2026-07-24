@@ -21,6 +21,7 @@ class LeadPayLoad(BaseModel):
     domain: str
     email: Optional[str] = "NA"
     seo_flaws: List[str]
+    score: float
 
 
 @app.post("/api/v1/leads/ingest")
@@ -37,6 +38,8 @@ async def injest_lead(payload: LeadPayLoad):
     for flaw in payload.seo_flaws:
         print(f"  ❌ {flaw}")
 
+    print("SEO Flaws score: ", payload.score)
+
     print("=" * 40 + "\n")
 
     flaw_string = ", ".join(payload.seo_flaws)
@@ -44,7 +47,7 @@ async def injest_lead(payload: LeadPayLoad):
     properties = {
         "name": payload.name,
         "domain": payload.domain,
-        "description": f"SEO Audit failed. Flaws: {flaw_string}",
+        "description": f"SEO Audit failed-\nSEO Flaw Score: {payload.score}\nFlaws: {flaw_string}",
     }
 
     if payload.phone and payload.phone not in ["NA", "N/A"]:
