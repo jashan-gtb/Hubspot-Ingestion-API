@@ -5,6 +5,8 @@ import requests
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
 app = FastAPI(title="B2B Lead Pipline Ingestion API")
 
 HUBSPOT_TOKKEN = os.getenv("tokken")
