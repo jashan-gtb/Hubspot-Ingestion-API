@@ -66,16 +66,40 @@ async def injest_lead(payload: LeadPayLoad):
         "Content-Type": "application/json",
     }
 
-    response = requests.post(HUBSPOT_URL, json=hubspot_data, headers=HEADERS)
+    # to remove duplicates
 
-    if response.status_code in [200, 201]:
+    search_url = "https://api.hubapi.com/crm/v3/objects/companies/search"
+
+    search_payload = {
+        "filterGroups": [
+            {
+                "filters": [
+                    {
+                        "propertyName": "domain",
+                        "operator": "EQ",
+                        "value": payload.domain,
+                    }
+                ]
+            }
+        ]
+    }
+
+    search_response = requests.post(search_url, headers=HEADERS, json=search_payload)
+    search_result = search_response.json()
+
+    if search_result.get("total", 0) > 0:
+        print(f"⚠️ {payload.name} already exists in HubSpot CRM (Skipped).")
+        print("=" * 40 + "\n")
+        return {"Status": "Skipped", "message": "Lead already exists in CRM"}
+
+    response_post = requests.post(HUBSPOT_URL, headers=HEADERS, json=hubspot_data)
+
+    if response_post.status_code in [200, 201]:
         print("Successfully injected into HubSpot CRM!")
         return {"Status": "Success", "message": "Lead Injected to Hubspot"}
 
-    elif response.status_code == 409:
-        print("Lead already exists in HubSpot CRM (Skipped).")
-        return {"Status": "Skipped", "message": "Lead already exists in CRM"}
-
     else:
-        print(f"❌ HubSpot Rejected Payload: {response.text}")
-        raise HTTPException(status_code=response.status_code, detail=response.json())
+        print(f"❌ HubSpot Rejected Payload: {response_post.text}")
+        raise HTTPException(
+            status_code=response_post.status_code, detail=response_post.json()
+        )
